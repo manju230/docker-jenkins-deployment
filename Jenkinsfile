@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'manju230'
+        DOCKER_HUB_USER = 'manju230'   // your Docker Hub username
         DOCKER_HUB_REPO = 'docker-jenkins-deployment'
         IMAGE_TAG = "${env.BUILD_NUMBER}"  // auto-tag with build number
     }
@@ -25,7 +25,6 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    // Use Jenkins credentials (ID: dockerhub-creds)
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                         sh "echo $PASS | docker login -u $USER --password-stdin"
                         sh "docker push ${DOCKER_HUB_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG}"
