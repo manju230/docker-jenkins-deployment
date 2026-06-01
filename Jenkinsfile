@@ -2,11 +2,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_REPO = 'docker-jenkins-deployment'
-        IMAGE_TAG = "${env.BUILD_NUMBER}"   // auto-tag with build number
+        DOCKER_USER = 'manjunath230'
+        DOCKER_HUB_REPO = 'manjunath230'   // your repo name
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
                 git branch: 'develop', url: 'https://github.com/manju230/docker-jenkins-deployment.git'
@@ -15,23 +17,39 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_HUB_REPO}:${IMAGE_TAG} ."
+                sh """
+                    docker build -t ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG} .
+                """
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Login & Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
-                                                  usernameVariable: 'DOCKER_USER',
-                                                  passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER_NAME',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker tag docker-jenkins-deployment:${IMAGE_TAG} manju230/${DOCKER_HUB_REPO}:${IMAGE_TAG}
-                        docker push manju230/${DOCKER_HUB_REPO}:${IMAGE_TAG}
-                        docker tag manju230/${DOCKER_HUB_REPO}:${IMAGE_TAG} manju230/${DOCKER_HUB_REPO}:latest
-                        docker push manju230/${DOCKER_HUB_REPO}:latest
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER_NAME --password-stdin
+
+                        docker push ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG}
+
+                        docker tag ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKER_USER}/${DOCKER_HUB_REPO}:latest
+                        docker push ${DOCKER_USER}/${DOCKER_HUB_REPO}:latest
+
+                        docker logout
                     '''
                 }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                sh """
+                    docker rmi ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG} || true
+                    docker rmi ${DOCKER_USER}/${DOCKER_HUB_REPO}:latest || true
+                """
             }
         }
     }
