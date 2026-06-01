@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_USER = 'manjunath230'
-        DOCKER_HUB_REPO = 'manjunath230'   // your repo name
+        DOCKER_HUB_REPO = 'manjunath230'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
@@ -27,11 +27,11 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER_NAME',
+                    usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER_NAME --password-stdin
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
                         docker push ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG}
 
