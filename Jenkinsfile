@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_HUB_REPO = 'docker-jenkins-deployment'
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"   // auto-tag with build number
     }
 
     stages {
@@ -21,11 +21,15 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                                  usernameVariable: 'DOCKER_USER',
+                                                  passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker tag docker-jenkins-deployment:${IMAGE_TAG} manju230/${DOCKER_HUB_REPO}:${IMAGE_TAG}
                         docker push manju230/${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                        docker tag manju230/${DOCKER_HUB_REPO}:${IMAGE_TAG} manju230/${DOCKER_HUB_REPO}:latest
+                        docker push manju230/${DOCKER_HUB_REPO}:latest
                     '''
                 }
             }
