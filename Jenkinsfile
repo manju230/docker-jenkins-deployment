@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = 'manjunath230'
+        DOCKER_HUB_USERNAME = 'manjunath230'
         DOCKER_HUB_REPO = 'manjunath230'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
@@ -18,7 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh """
-                    docker build -t ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG} .
+                    docker build -t ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:${IMAGE_TAG} .
                 """
             }
         }
@@ -27,16 +27,18 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    usernameVariable: 'DH_USER',
+                    passwordVariable: 'DH_PASS'
                 )]) {
                     sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        echo "DEBUG USER = $DH_USER"   # TEMP debug
 
-                        docker push ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG}
+                        echo $DH_PASS | docker login -u $DH_USER --password-stdin
 
-                        docker tag ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKER_USER}/${DOCKER_HUB_REPO}:latest
-                        docker push ${DOCKER_USER}/${DOCKER_HUB_REPO}:latest
+                        docker push ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:${IMAGE_TAG}
+
+                        docker tag ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:${IMAGE_TAG} ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:latest
+                        docker push ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:latest
 
                         docker logout
                     '''
@@ -47,8 +49,8 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh """
-                    docker rmi ${DOCKER_USER}/${DOCKER_HUB_REPO}:${IMAGE_TAG} || true
-                    docker rmi ${DOCKER_USER}/${DOCKER_HUB_REPO}:latest || true
+                    docker rmi ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:${IMAGE_TAG} || true
+                    docker rmi ${DOCKER_HUB_USERNAME}/${DOCKER_HUB_REPO}:latest || true
                 """
             }
         }
